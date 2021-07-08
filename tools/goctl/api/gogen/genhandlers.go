@@ -28,6 +28,12 @@ func {{.HandlerName}}(ctx *svc.ServiceContext) http.HandlerFunc {
 			return
 		}{{end}}
 
+		{{if .HasRequest}}
+		if err := validator.Validate(&req); err != nil {
+			httpx.Error(w, err)
+			return
+		}{{end}}
+
 		l := logic.New{{.LogicType}}(r.Context(), ctx)
 		{{if .HasResp}}resp, {{end}}err := l.{{.Call}}({{if .HasRequest}}req{{end}})
 		if err != nil {
@@ -103,6 +109,8 @@ func genHandlerImports(group spec.Group, route spec.Route, parentPkg string) str
 		util.JoinPackages(parentPkg, getLogicFolderPath(group, route))))
 	imports = append(imports, fmt.Sprintf("\"%s\"", util.JoinPackages(parentPkg, contextDir)))
 	if len(route.RequestTypeName()) > 0 {
+		imports = append(imports, fmt.Sprintf("\"%s\"",
+			util.JoinPackages(strings.Split(parentPkg, "/")[0], "common/validator")))
 		imports = append(imports, fmt.Sprintf("\"%s\"\n", util.JoinPackages(parentPkg, typesDir)))
 	}
 	imports = append(imports, fmt.Sprintf("\"%s/rest/httpx\"", vars.ProjectOpenSourceURL))
